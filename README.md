@@ -47,8 +47,8 @@ Download standalone executables that don't require Python installation:
 | **🐧 Linux** | ARM64 | `tzst-{version}-linux-arm64.zip` |
 | **🪟 Windows** | x64 | `tzst-{version}-windows-amd64.zip` |
 | **🪟 Windows** | ARM64 | `tzst-{version}-windows-arm64.zip` |
-| **🍎 macOS** | Intel | `tzst-{version}-darwin-amd64.zip` |
 | **🍎 macOS** | Apple Silicon | `tzst-{version}-darwin-arm64.zip` |
+| **🍎 macOS** | Intel | `tzst-{version}-darwin-arm64.zip`（Rosetta 2） |
 
 #### 🛠️ Installation Steps
 
