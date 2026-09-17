@@ -7,16 +7,16 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag name to release (e.g. v1.3.3). Must already exist locally or be created in the run."
-        required: true
+        description: "Tag name for the release (e.g. v1.3.3). Defaults to the current ref."
+        required: false
         default: ""
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build distributions
+  sdist-wheel:
+    name: Build sdist and wheel
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -42,17 +42,95 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist
-          path: dist/
+          name: tzst-python-dist
+          path: dist/*
 
-  release:
-    name: Publish GitHub Release
-    needs: build
-    runs-on: ubuntu-latest
+  binaries:
+    name: Build binary (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-amd64
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+          - os: macos-13
+            target: darwin-amd64
+          - os: macos-15
+            target: darwin-arm64
+          - os: windows-latest
+            target: windows-amd64
+          - os: windows-11-arm
+            target: windows-arm64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyInstaller and runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller zstandard
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          version=$(python - <<'PY'
+          import pathlib, re
+
+          source = pathlib.Path("src/tzst/__init__.py").read_text(encoding="utf-8")
+          print(re.search(r'__version__\s*=\s*"([^"]+)"', source).group(1))
+          PY
+          )
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build executable
+        shell: bash
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --name tzst \
+            --collect-all zstandard src/main.py
+
+      - name: Smoke test executable
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            exe="dist/tzst.exe"
+          else
+            exe="dist/tzst"
+            chmod +x "$exe"
+          fi
+          "$exe" --version
+
+      - name: Package executable
+        id: package
+        shell: bash
+        run: |
+          asset="tzst-${{ steps.version.outputs.version }}-${{ matrix.target }}.zip"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            powershell -NoProfile -Command "Compress-Archive -Path dist/tzst.exe -DestinationPath '$asset'"
+          else
+            zip -j "$asset" dist/tzst
+          fi
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tzst-${{ matrix.target }}
+          path: ${{ steps.package.outputs.asset }}
+
+  release:
+    name: Publish GitHub Release
+    needs: [sdist-wheel, binaries]
+    runs-on: ubuntu-latest
+    steps:
       - name: Resolve tag name
         id: tag
         shell: bash
@@ -64,18 +142,19 @@ jobs:
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Download build artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist
-          path: dist
+          pattern: tzst-*
+          merge-multiple: true
+          path: release-assets
 
       - name: Create release and upload assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
-          files: dist/*
+          files: release-assets/*
           draft: false
           prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
           generate_release_notes: true
