@@ -1,24 +1,9 @@
-> [!TIP]
-> 欢迎加入“Xget 开源与 AI 交流群”，一起交流开源项目、AI 应用、工程实践、效率工具和独立开发；如果你也在做产品、写代码、折腾项目或者对开源和 AI 感兴趣，欢迎[**进群**](https://file.xi-xu.me/QR%20Codes/%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png)认识更多认真做事、乐于分享的朋友。
-
-<h1 align="center">
-<img src="https://raw.githubusercontent.com/xixu-me/tzst/refs/heads/main/docs/_static/tzst-logo.png" width="300">
-</h1><br>
-
-[![codecov](https://codecov.io/gh/xixu-me/tzst/graph/badge.svg?token=2AIN1559WU)](https://codecov.io/gh/xixu-me/tzst)
-[![CodeQL](https://github.com/xixu-me/tzst/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/xixu-me/tzst/actions/workflows/github-code-scanning/codeql)
-[![CI/CD](https://github.com/xixu-me/tzst/actions/workflows/ci.yml/badge.svg)](https://github.com/xixu-me/tzst/actions/workflows/ci.yml)
+[![CI](https://github.com/aaron-xue/tzst/actions/workflows/ci.yml/badge.svg)](https://github.com/aaron-xue/tzst/actions/workflows/ci.yml)
 [![PyPI - Version](https://img.shields.io/pypi/v/tzst)](https://pypi.org/project/tzst/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/tzst)](https://pypistats.org/packages/tzst)
-[![GitHub License](https://img.shields.io/github/license/xixu-me/tzst)](LICENSE)
-[![Sponsor](https://img.shields.io/badge/Sponsor-violet)](https://xi-xu.me/#sponsorships)
-[![Documentation](https://img.shields.io/badge/Documentation-blue)](https://tzst.xi-xu.me)
-
-**🇺🇸 English** | [🇨🇳 汉语](./README.zh.md) | [🇪🇸 español](./README.es.md) | [🇯🇵 日本語](./README.ja.md) | [🇦🇪 العربية](./README.ar.md) | [🇷🇺 русский](./README.ru.md) | [🇩🇪 Deutsch](./README.de.md) | [🇫🇷 français](./README.fr.md) | [🇰🇷 한국어](./README.ko.md) | [🇧🇷 português](./README.pt.md)
+[![GitHub License](https://img.shields.io/github/license/aaron-xue/tzst)](LICENSE)
 
 **tzst** is a next-generation Python library engineered for modern archive management, leveraging cutting-edge Zstandard compression to deliver superior performance, security, and reliability. Built exclusively for Python 3.12+, this enterprise-grade solution combines atomic operations, streaming efficiency, and a meticulously crafted API to redefine how developers handle `.tzst`/`.tar.zst` archives in production environments. 🚀
-
-In-depth technical analysis article published: **[Deep Dive into tzst: A Modern Python Archiving Library Based on Zstandard](https://blog.xi-xu.me/2025/11/01/deep-dive-into-tzst-en.html)**.
 
 ## ✨ Features
 
@@ -52,7 +37,7 @@ Download standalone executables that don't require Python installation:
 
 #### 🛠️ Installation Steps
 
-1. **📥 Download** the appropriate archive for your platform from the [latest releases page](https://github.com/xixu-me/tzst/releases/latest)
+1. **📥 Download** the appropriate archive for your platform from the [latest releases page](https://github.com/aaron-xue/tzst/releases/latest)
 2. **📦 Extract** the archive to get the `tzst` executable (or `tzst.exe` on Windows)
 3. **📂 Move** the executable to a directory in your PATH:
    - **🐧 Linux/macOS**: `sudo mv tzst /usr/local/bin/`
@@ -83,7 +68,7 @@ uv tool install tzst
 ### 🔧 From Source
 
 ```bash
-git clone https://github.com/xixu-me/tzst.git
+git clone https://github.com/aaron-xue/tzst.git
 cd tzst
 pip install .
 ```
@@ -93,7 +78,7 @@ pip install .
 This project uses modern Python packaging standards:
 
 ```bash
-git clone https://github.com/xixu-me/tzst.git
+git clone https://github.com/aaron-xue/tzst.git
 cd tzst
 pip install -e .[dev]
 ```
@@ -463,7 +448,7 @@ except KeyboardInterrupt:
 This project uses modern Python packaging standards:
 
 ```bash
-git clone https://github.com/xixu-me/tzst.git
+git clone https://github.com/aaron-xue/tzst.git
 cd tzst
 pip install -e .[dev]
 ```
@@ -500,7 +485,7 @@ We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) 
 ### 🚀 Quick Start for Contributors
 
 ```bash
-git clone https://github.com/xixu-me/tzst.git
+git clone https://github.com/aaron-xue/tzst.git
 cd tzst
 pip install -e .[dev]
 python -m pytest tests/
@@ -523,6 +508,6 @@ python -m pytest tests/
 
 ## 📄 License
 
-Copyright &copy; [Xi Xu](https://xi-xu.me). All rights reserved.
+Copyright &copy; Xi Xu. All rights reserved.
 
 Licensed under the [BSD 3-Clause](LICENSE) license.

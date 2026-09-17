@@ -7,16 +7,66 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag name for the release (e.g. v1.3.3). Defaults to the current ref."
-        required: false
-        default: ""
+        description: "Tag name to release (e.g. v1.3.3). Required when triggered manually."
+        required: true
 
 permissions:
   contents: write
 
 jobs:
+  prepare:
+    name: Resolve tag and version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve tag and version
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          input_tag="${{ github.event.inputs.tag }}"
+          ref="$GITHUB_REF"
+
+          if [ "${ref#refs/tags/}" != "$ref" ]; then
+            tag="${ref#refs/tags/}"
+          elif [ -n "$input_tag" ]; then
+            tag="$input_tag"
+          else
+            echo "::error::No tag resolved. Push a 'v*' tag or run this workflow manually with the 'tag' input."
+            exit 1
+          fi
+
+          tag="${tag#refs/tags/}"
+
+          if [ -z "$tag" ] || [ "${tag#refs/}" != "$tag" ]; then
+            echo "::error::Invalid tag name: '$tag'"
+            exit 1
+          fi
+
+          version=$(python - <<'PY'
+          import pathlib, re
+
+          source = pathlib.Path("src/tzst/__init__.py").read_text(encoding="utf-8")
+          print(re.search(r'__version__\s*=\s*"([^"]+)"', source).group(1))
+          PY
+          )
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          if [ "$tag" != "v$version" ] && [ "$tag" != "$version" ]; then
+            echo "::warning::Tag '$tag' does not match src/tzst/__init__.py version '$version'."
+          fi
+
   sdist-wheel:
     name: Build sdist and wheel
+    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -47,6 +97,7 @@ jobs:
 
   binaries:
     name: Build binary (${{ matrix.target }})
+    needs: prepare
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
@@ -78,19 +129,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pyinstaller zstandard
 
-      - name: Resolve version
-        id: version
-        shell: bash
-        run: |
-          version=$(python - <<'PY'
-          import pathlib, re
-
-          source = pathlib.Path("src/tzst/__init__.py").read_text(encoding="utf-8")
-          print(re.search(r'__version__\s*=\s*"([^"]+)"', source).group(1))
-          PY
-          )
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
       - name: Build executable
         shell: bash
         run: |
@@ -112,7 +150,7 @@ jobs:
         id: package
         shell: bash
         run: |
-          asset="tzst-${{ steps.version.outputs.version }}-${{ matrix.target }}.zip"
+          asset="tzst-${{ needs.prepare.outputs.version }}-${{ matrix.target }}.zip"
           if [ "${{ runner.os }}" = "Windows" ]; then
             powershell -NoProfile -Command "Compress-Archive -Path dist/tzst.exe -DestinationPath '$asset'"
           else
@@ -128,20 +166,9 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [sdist-wheel, binaries]
+    needs: [prepare, sdist-wheel, binaries]
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve tag name
-        id: tag
-        shell: bash
-        run: |
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
-            tag="${{ github.event.inputs.tag }}"
-          else
-            tag="${GITHUB_REF#refs/tags/}"
-          fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -152,11 +179,11 @@ jobs:
       - name: Create release and upload assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: ${{ steps.tag.outputs.tag }}
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: ${{ needs.prepare.outputs.tag }}
           files: release-assets/*
           draft: false
-          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
+          prerelease: ${{ contains(needs.prepare.outputs.tag, '-') }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
